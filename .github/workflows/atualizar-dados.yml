@@ -1,0 +1,50 @@
+# Rastreia o e-Cidadania, valida e publica consultas.json na branch `data`.
+# Se a validação reprovar, o job falha antes de publicar: o JSON anterior continua no ar.
+name: Atualizar dados
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: atualizar-dados
+  cancel-in-progress: false
+
+jobs:
+  atualizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+
+      - name: Baixar o JSON publicado anterior (para a regra dos 50%)
+        run: |
+          mkdir -p Server/out
+          curl -fsS -o Server/out/anterior.json \
+            "https://raw.githubusercontent.com/${{ github.repository }}/data/consultas.json" \
+            || echo "Sem JSON anterior (primeira execução)."
+
+      - name: Rastrear e validar
+        working-directory: Server
+        run: |
+          ARGS="--out out/consultas.json"
+          if [ -s out/anterior.json ]; then ARGS="$ARGS --anterior out/anterior.json"; fi
+          uv run python -m plviewer.main $ARGS
+
+      - name: Publicar na branch data
+        run: |
+          mkdir publicar
+          cp Server/out/consultas.json publicar/
+          cd publicar
+          git init -q -b data
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add consultas.json
+          git commit -q -m "dados: $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" data

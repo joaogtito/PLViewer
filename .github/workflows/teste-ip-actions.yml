@@ -1,0 +1,17 @@
+# Descartável (etapa 0 do plano): confirma que o IP do Actions consegue falar com o Senado.
+# Pode apagar depois de passar.
+name: Teste IP do Actions
+
+on: workflow_dispatch
+
+jobs:
+  curl:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar a página 1
+        run: |
+          curl -sS -A "ConsultasSenadoApp/0.1 (independent reader of public data)" \
+            -o pagina1.html -w "HTTP %{http_code}, %{size_download} bytes, %{time_total}s\n" \
+            "https://www12.senado.leg.br/ecidadania/pesquisamateria?p=1" | tee resultado.txt
+          grep -q "^HTTP 200" resultado.txt
+          grep -c 'class="resumo-materia"' pagina1.html
