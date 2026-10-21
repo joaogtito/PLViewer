@@ -14,8 +14,11 @@ export function abrirLink(url: string): void {
 
 export function configurarBarraDeStatus(): void {
   if (!nativo) return
-  // Fundo azul-escuro do cabeçalho, ícones claros.
-  void StatusBar.setStyle({ style: Style.Dark }).catch(() => {})
+  // Esconde a barra de status do sistema para liberar a tela ao rolar a lista.
+  // Estilo escuro fica definido caso o usuário puxe a barra (deslizar da borda superior).
+  void StatusBar.setStyle({ style: Style.Dark })
+    .then(() => StatusBar.hide())
+    .catch(() => {})
 }
 
 /**
