@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Dados, Ordem } from '../lib/tipos'
 import { filtrar, indexar, MIN_VOTOS_RANKING, ORDENS_RANKING } from '../lib/busca'
 import { formatarNumero, haQuanto, nomeTipo } from '../lib/formato'
+import { aoVoltar } from '../lib/plataforma'
 import { LinhaConsulta } from './LinhaConsulta'
 
 const PASSO = 30
@@ -59,6 +60,21 @@ export function Consultas({ dados, semConexao }: { dados: Dados; semConexao: boo
     setTipo(null)
     setAno(null)
   }
+
+  // Botão voltar do Android: primeiro limpa os filtros; sem filtros, fecha o app.
+  const limparRef = useRef(limpar)
+  const ativosRef = useRef(filtrosAtivos)
+  limparRef.current = limpar
+  ativosRef.current = filtrosAtivos
+  useEffect(
+    () =>
+      aoVoltar(() => {
+        if (!ativosRef.current) return false
+        limparRef.current()
+        return true
+      }),
+    [],
+  )
 
   return (
     <>

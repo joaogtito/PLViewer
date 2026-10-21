@@ -3,11 +3,13 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
 // base relativa: o mesmo build serve no Pages (subpasta), no Capacitor e no Electron (file://).
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   base: './',
   plugins: [
     react(),
     VitePWA({
+      // No APK (mode capacitor) o service worker é desnecessário: os assets já estão embutidos.
+      disable: mode === 'capacitor',
       registerType: 'autoUpdate',
       manifest: {
         name: 'Consultas Públicas do Senado',
@@ -29,4 +31,4 @@ export default defineConfig({
       workbox: { globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'] },
     }),
   ],
-})
+}))

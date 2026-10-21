@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Consultas Senado</string>
+    <string name="title_activity_main">Consultas Senado</string>
+    <string name="package_name">io.github.JaoTitow.plviewer</string>
+    <string name="custom_url_scheme">io.github.JaoTitow.plviewer</string>
+</resources>

@@ -1,0 +1,9 @@
+{
+  "appId": "io.github.JaoTitow.plviewer",
+  "appName": "Consultas Senado",
+  "webDir": "dist",
+  "android": { "backgroundColor": "#0b3d78" },
+  "plugins": {
+    "StatusBar": { "style": "DARK", "backgroundColor": "#0b3d78", "overlaysWebView": false }
+  }
+}

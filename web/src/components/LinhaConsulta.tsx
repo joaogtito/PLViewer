@@ -1,5 +1,6 @@
 import { memo, useState } from 'react'
 import type { Consulta } from '../lib/tipos'
+import { abrirLink } from '../lib/plataforma'
 import { BarraBalanco } from './BarraBalanco'
 
 export const LinhaConsulta = memo(function LinhaConsulta({ c }: { c: Consulta }) {
@@ -23,7 +24,16 @@ export const LinhaConsulta = memo(function LinhaConsulta({ c }: { c: Consulta })
       </div>
       <div className="linha__votos">
         <BarraBalanco c={c} />
-        <a className="votar" href={c.url} target="_blank" rel="noopener noreferrer">
+        <a
+          className="votar"
+          href={c.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => {
+            e.preventDefault()
+            abrirLink(c.url)
+          }}
+        >
           Votar no Senado <span aria-hidden="true">↗</span>
         </a>
       </div>

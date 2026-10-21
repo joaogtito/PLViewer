@@ -1,0 +1,64 @@
+# Gera o APK assinado e publica numa Release quando uma tag v* é criada (ex.: v1.2.3).
+# Secrets: ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD.
+name: Release do APK
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Versão a partir da tag
+        id: versao
+        run: |
+          nome="${GITHUB_REF_NAME#v}"
+          IFS=. read -r maior menor patch <<< "${nome%%-*}"
+          echo "nome=$nome" >> "$GITHUB_OUTPUT"
+          echo "codigo=$((maior * 10000 + menor * 100 + patch))" >> "$GITHUB_OUTPUT"
+
+      - run: npm ci
+      - run: npm test
+      - run: npm run build:android
+
+      - name: Keystore
+        run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/plviewer.keystore"
+
+      - name: Compilar APK
+        working-directory: web/android
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/plviewer.keystore
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: ./gradlew assembleRelease -PversionName=${{ steps.versao.outputs.nome }} -PversionCode=${{ steps.versao.outputs.codigo }}
+
+      - name: Nomear APK
+        run: cp android/app/build/outputs/apk/release/app-release.apk "plviewer-${{ steps.versao.outputs.nome }}.apk"
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: web/plviewer-${{ steps.versao.outputs.nome }}.apk
+          generate_release_notes: true
