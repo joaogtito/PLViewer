@@ -30,10 +30,21 @@ jobs:
             "https://raw.githubusercontent.com/${{ github.repository }}/data/consultas.json" \
             || echo "Sem JSON anterior (primeira execução)."
 
+      - name: Preparar a branch historico
+        run: |
+          REPO="https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
+          if git ls-remote --exit-code --heads "$REPO" historico >/dev/null; then
+            git clone -q --depth 1 --branch historico "$REPO" historico-branch
+          else
+            mkdir historico-branch
+            git -C historico-branch init -q -b historico
+            git -C historico-branch remote add origin "$REPO"
+          fi
+
       - name: Rastrear e validar
         working-directory: Server
         run: |
-          ARGS="--out out/consultas.json"
+          ARGS="--out out/consultas.json --historico-dir ../historico-branch/historico"
           if [ -s out/anterior.json ]; then ARGS="$ARGS --anterior out/anterior.json"; fi
           uv run python -m plviewer.main $ARGS
 
@@ -48,3 +59,16 @@ jobs:
           git add consultas.json consultas.json.gz
           git commit -q -m "dados: $(date -u +%Y-%m-%dT%H:%MZ)"
           git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" data
+
+      - name: Publicar o snapshot diário (branch historico)
+        working-directory: historico-branch
+        run: |
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Sem snapshot novo hoje."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -q -m "historico: $(TZ=America/Sao_Paulo date +%F)"
+          git push -u origin historico

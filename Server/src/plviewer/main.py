@@ -8,6 +8,7 @@ from pathlib import Path
 
 from .config import Config
 from .crawler import HttpCliente, Rastreador, ResultadoRastreio
+from .historico import gravar_snapshot
 from .validar import validar
 
 
@@ -52,7 +53,8 @@ async def executar(args: argparse.Namespace, config: Config) -> int:
             print(f"  - {m}", file=sys.stderr)
         return 1
 
-    saida = montar_saida(res, datetime.now(timezone.utc))
+    agora = datetime.now(timezone.utc)
+    saida = montar_saida(res, agora)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     corpo = serializar(saida)
     args.out.write_bytes(corpo)
@@ -62,6 +64,9 @@ async def executar(args: argparse.Namespace, config: Config) -> int:
         gzip.compress(corpo, compresslevel=9, mtime=0)
     )
     print(f"{saida['total']} itens em {args.out} (+ .gz, {res.total_paginas} páginas)")
+    if args.historico_dir:
+        snapshot = gravar_snapshot(res.consultas, agora, args.historico_dir)
+        print(f"Histórico: {snapshot or 'já existe o snapshot de hoje'}")
     return 0
 
 
@@ -73,6 +78,12 @@ def main() -> None:
         type=Path,
         default=None,
         help="consultas.json publicado antes, para comparar o total",
+    )
+    p.add_argument(
+        "--historico-dir",
+        type=Path,
+        default=None,
+        help="pasta dos snapshots diários (grava só o primeiro do dia, fuso de Brasília)",
     )
     args = p.parse_args()
     sys.exit(asyncio.run(executar(args, Config.do_ambiente())))
