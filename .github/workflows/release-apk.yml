@@ -29,8 +29,6 @@ jobs:
           distribution: temurin
           java-version: 21
 
-      - uses: android-actions/setup-android@v3
-
       - name: Versão a partir da tag
         id: versao
         run: |
