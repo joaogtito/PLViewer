@@ -40,11 +40,11 @@ jobs:
       - name: Publicar na branch data
         run: |
           mkdir publicar
-          cp Server/out/consultas.json publicar/
+          cp Server/out/consultas.json Server/out/consultas.json.gz publicar/
           cd publicar
           git init -q -b data
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add consultas.json
+          git add consultas.json consultas.json.gz
           git commit -q -m "dados: $(date -u +%Y-%m-%dT%H:%MZ)"
           git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" data
