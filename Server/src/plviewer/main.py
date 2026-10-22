@@ -2,6 +2,7 @@ import argparse
 import asyncio
 import gzip
 import json
+import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -9,6 +10,7 @@ from pathlib import Path
 from .config import Config
 from .crawler import HttpCliente, Rastreador, ResultadoRastreio
 from .historico import gravar_snapshot
+from .notificar import EnviadorDryRun, EnviadorFcm, LimiteExcedido, carregar_itens, notificar
 from .validar import validar
 
 
@@ -64,6 +66,23 @@ async def executar(args: argparse.Namespace, config: Config) -> int:
         gzip.compress(corpo, compresslevel=9, mtime=0)
     )
     print(f"{saida['total']} itens em {args.out} (+ .gz, {res.total_paginas} páginas)")
+    if args.notificar:
+        # Antes da publicação (feita pelo workflow depois deste processo): se o envio falha,
+        # o JSON anterior continua no ar e o mesmo evento é detectado de novo na próxima rodada.
+        if args.anterior is None or not args.anterior.exists():
+            print("Sem JSON anterior: nenhuma notificação enviada (primeira execução).")
+        else:
+            try:
+                enviador = (
+                    EnviadorFcm(os.environ["FIREBASE_SERVICE_ACCOUNT"])
+                    if args.notificar == "fcm"
+                    else EnviadorDryRun()
+                )
+                n = notificar(carregar_itens(args.anterior), saida["itens"], enviador)
+            except LimiteExcedido as e:
+                print(f"Disjuntor: {e}", file=sys.stderr)
+                return 1
+            print(f"Notificações enviadas: {n}")
     if args.historico_dir:
         snapshot = gravar_snapshot(res.consultas, agora, args.historico_dir)
         print(f"Histórico: {snapshot or 'já existe o snapshot de hoje'}")
@@ -84,6 +103,12 @@ def main() -> None:
         type=Path,
         default=None,
         help="pasta dos snapshots diários (grava só o primeiro do dia, fuso de Brasília)",
+    )
+    p.add_argument(
+        "--notificar",
+        choices=["dry", "fcm"],
+        default=None,
+        help="envia notificações das mudanças em relação a --anterior (dry só imprime)",
     )
     args = p.parse_args()
     sys.exit(asyncio.run(executar(args, Config.do_ambiente())))

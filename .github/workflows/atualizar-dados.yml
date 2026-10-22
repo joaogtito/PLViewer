@@ -41,11 +41,21 @@ jobs:
             git -C historico-branch remote add origin "$REPO"
           fi
 
-      - name: Rastrear e validar
+      # Notifica antes de publicar: se o envio falhar (ou o disjuntor disparar), o job falha,
+      # o JSON anterior continua no ar e o mesmo evento é detectado na próxima rodada.
+      # Sem o secret FIREBASE_SERVICE_ACCOUNT roda em dry-run (só imprime no log).
+      - name: Rastrear, validar e notificar
         working-directory: Server
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: |
           ARGS="--out out/consultas.json --historico-dir ../historico-branch/historico"
           if [ -s out/anterior.json ]; then ARGS="$ARGS --anterior out/anterior.json"; fi
+          if [ -n "$FIREBASE_SERVICE_ACCOUNT" ]; then
+            ARGS="$ARGS --notificar fcm"
+          else
+            ARGS="$ARGS --notificar dry"
+          fi
           uv run python -m plviewer.main $ARGS
 
       - name: Publicar na branch data
