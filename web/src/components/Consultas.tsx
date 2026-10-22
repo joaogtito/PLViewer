@@ -8,6 +8,7 @@ import { temAlgo } from '../lib/topicos'
 import { usePreferencias } from '../lib/usePreferencias'
 import { LinhaConsulta } from './LinhaConsulta'
 import { PainelNotificacoes } from './PainelNotificacoes'
+import { Sino } from './Sino'
 
 const PASSO = 30
 
@@ -51,6 +52,16 @@ export function Consultas({
   const [agora, setAgora] = useState(Date.now())
   const [painelAberto, setPainelAberto] = useState(false)
   const notif = usePreferencias()
+  // Sombra da barra de filtros só quando ela está colada no topo: observa uma sentinela logo acima dela.
+  const sentinela = useRef<HTMLDivElement>(null)
+  const [fixa, setFixa] = useState(false)
+  useEffect(() => {
+    const el = sentinela.current
+    if (!el || typeof IntersectionObserver === 'undefined') return
+    const obs = new IntersectionObserver(([e]) => setFixa(!e.isIntersecting && e.boundingClientRect.top < 0))
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [])
   const porId = useMemo(() => new Map(itens.map((c) => [c.id, c])), [itens])
   const seguidas = useMemo(() => new Set(notif.prefs.seguidas), [notif.prefs.seguidas])
 
@@ -124,7 +135,7 @@ export function Consultas({
               aria-label={temAlgo(notif.prefs) ? 'Notificações (ativas)' : 'Notificações'}
               onClick={() => setPainelAberto(true)}
             >
-              <span aria-hidden="true">{temAlgo(notif.prefs) ? '🔔' : '🔕'}</span>
+              <Sino ativo={temAlgo(notif.prefs)} />
             </button>
           )}
           <h1>Consultas públicas do Senado</h1>
@@ -161,7 +172,8 @@ export function Consultas({
         </div>
       )}
 
-      <div className="filtros">
+      <div ref={sentinela} className="filtros__sentinela" aria-hidden="true" />
+      <div className={`filtros${fixa ? ' filtros--fixa' : ''}`}>
         <div className="contido">
           <input
             type="search"

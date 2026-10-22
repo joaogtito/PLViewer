@@ -67,6 +67,8 @@ body {
   top: 0;
   z-index: 2;
 }
+.filtros__sentinela { height: 1px; margin-bottom: -1px; }
+.filtros--fixa { box-shadow: 0 4px 12px -2px rgba(11, 36, 66, 0.18); }
 .busca {
   width: 100%;
   font: inherit;
@@ -221,6 +223,17 @@ body {
 
 @media (prefers-reduced-motion: no-preference) {
   .chip, .botao { transition: background-color 0.15s; }
+  .filtros { transition: box-shadow 0.2s; }
+  .sino__risco { transition: stroke-dashoffset 0.3s ease; }
+  .sino__icone--balanca .sino__corpo { transform-origin: 12px 4px; animation: balancar 0.6s ease; }
+}
+@keyframes balancar {
+  0% { transform: rotate(0); }
+  20% { transform: rotate(16deg); }
+  40% { transform: rotate(-13deg); }
+  60% { transform: rotate(8deg); }
+  80% { transform: rotate(-4deg); }
+  100% { transform: rotate(0); }
 }
 
 /* Notificações (só no APK) */
@@ -240,6 +253,10 @@ body {
   cursor: pointer;
 }
 .topo h1 { padding-right: 52px; }
+.sino { color: #fff; }
+.sino__icone { display: block; }
+.sino__risco { stroke-dasharray: 1; stroke-dashoffset: 0; }
+.sino__icone--ativo .sino__risco { stroke-dashoffset: 1; }
 
 .linha__cabecalho { display: flex; align-items: center; gap: 4px; }
 .estrela {
