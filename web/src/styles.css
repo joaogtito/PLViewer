@@ -222,3 +222,60 @@ body {
 @media (prefers-reduced-motion: no-preference) {
   .chip, .botao { transition: background-color 0.15s; }
 }
+
+/* Notificações (só no APK) */
+.topo .contido { position: relative; }
+.sino {
+  position: absolute;
+  top: 0;
+  right: max(16px, env(safe-area-inset-right));
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  font-size: 1.3rem;
+  background: rgba(255, 255, 255, 0.12);
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.topo h1 { padding-right: 52px; }
+
+.linha__cabecalho { display: flex; align-items: center; gap: 4px; }
+.estrela {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  margin: -8px 0 -8px -8px;
+  display: grid;
+  place-items: center;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--laranja);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.linha__cabecalho .estrela { order: 2; margin-left: auto; }
+
+.painel {
+  width: min(560px, 100%);
+  max-height: 85dvh;
+  margin: auto auto 0;
+  padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+  border: 0;
+  border-radius: 16px 16px 0 0;
+  background: var(--superficie);
+  color: var(--texto);
+  overflow-y: auto;
+}
+.painel::backdrop { background: rgba(10, 20, 35, 0.55); }
+.painel__cabecalho { display: flex; justify-content: space-between; align-items: center; }
+.painel h2 { margin: 0; font-size: 1.25rem; }
+.painel h3 { margin: 20px 0 4px; font-size: 1rem; }
+.aviso--painel { margin: 12px 0 0; border: 1px solid #f3d9ab; border-radius: var(--raio); }
+.evento { display: flex; gap: 12px; align-items: flex-start; padding: 10px 0; }
+.evento input { width: 20px; height: 20px; margin-top: 2px; accent-color: var(--azul); }
+.evento small { display: block; color: var(--texto-suave); font-size: 0.85rem; }
+.seguidas { list-style: none; margin: 8px 0; padding: 0; }
+.seguidas li { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-top: 1px solid var(--borda); }

@@ -2,8 +2,12 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Dados, Ordem } from '../lib/tipos'
 import { filtrar, indexar, MIN_VOTOS_RANKING, ORDENS_RANKING } from '../lib/busca'
 import { formatarNumero, haQuanto, nomeTipo } from '../lib/formato'
-import { aoVoltar } from '../lib/plataforma'
+import type { Destino } from '../lib/notificacoes'
+import { aoVoltar, nativo } from '../lib/plataforma'
+import { temAlgo } from '../lib/topicos'
+import { usePreferencias } from '../lib/usePreferencias'
 import { LinhaConsulta } from './LinhaConsulta'
+import { PainelNotificacoes } from './PainelNotificacoes'
 
 const PASSO = 30
 
@@ -24,7 +28,18 @@ function useDebounce<T>(valor: T, ms: number): T {
   return v
 }
 
-export function Consultas({ dados, semConexao }: { dados: Dados; semConexao: boolean }) {
+/** `n` muda a cada toque numa notificação, para reaplicar mesmo com o mesmo destino. */
+export type DestinoAberto = Destino & { n: number }
+
+export function Consultas({
+  dados,
+  semConexao,
+  destino,
+}: {
+  dados: Dados
+  semConexao: boolean
+  destino: DestinoAberto | null
+}) {
   const itens = useMemo(() => indexar(dados.itens), [dados])
   const [entrada, setEntrada] = useState('')
   const termo = useDebounce(entrada, 300)
@@ -34,6 +49,22 @@ export function Consultas({ dados, semConexao }: { dados: Dados; semConexao: boo
   const [ordem, setOrdem] = useState<Ordem>('mais-votos')
   const [visiveis, setVisiveis] = useState(PASSO)
   const [agora, setAgora] = useState(Date.now())
+  const [painelAberto, setPainelAberto] = useState(false)
+  const notif = usePreferencias()
+  const porId = useMemo(() => new Map(itens.map((c) => [c.id, c])), [itens])
+  const seguidas = useMemo(() => new Set(notif.prefs.seguidas), [notif.prefs.seguidas])
+
+  // Toque numa notificação: busca pelo título (individual) ou filtro por tipo (resumo).
+  // Inclui consultas sem votos, porque uma consulta nova ainda não tem nenhum.
+  useEffect(() => {
+    if (!destino) return
+    setEntrada(destino.busca ?? '')
+    setTipo(destino.tipo ?? null)
+    setAno(null)
+    setIncluirSemVotos(true)
+    setPainelAberto(false)
+    window.scrollTo({ top: 0 })
+  }, [destino])
 
   useEffect(() => {
     const t = setInterval(() => setAgora(Date.now()), 60_000)
@@ -64,11 +95,17 @@ export function Consultas({ dados, semConexao }: { dados: Dados; semConexao: boo
   // Botão voltar do Android: primeiro limpa os filtros; sem filtros, fecha o app.
   const limparRef = useRef(limpar)
   const ativosRef = useRef(filtrosAtivos)
+  const painelRef = useRef(painelAberto)
   limparRef.current = limpar
   ativosRef.current = filtrosAtivos
+  painelRef.current = painelAberto
   useEffect(
     () =>
       aoVoltar(() => {
+        if (painelRef.current) {
+          setPainelAberto(false)
+          return true
+        }
         if (!ativosRef.current) return false
         limparRef.current()
         return true
@@ -80,6 +117,16 @@ export function Consultas({ dados, semConexao }: { dados: Dados; semConexao: boo
     <>
       <header className="topo">
         <div className="contido">
+          {nativo && (
+            <button
+              type="button"
+              className="sino"
+              aria-label={temAlgo(notif.prefs) ? 'Notificações (ativas)' : 'Notificações'}
+              onClick={() => setPainelAberto(true)}
+            >
+              <span aria-hidden="true">{temAlgo(notif.prefs) ? '🔔' : '🔕'}</span>
+            </button>
+          )}
           <h1>Consultas públicas do Senado</h1>
           <p>
             {formatarNumero(baseContagem)} proposições {incluirSemVotos ? '' : 'com votos'}. Dados do
@@ -87,6 +134,26 @@ export function Consultas({ dados, semConexao }: { dados: Dados; semConexao: boo
           </p>
         </div>
       </header>
+
+      {painelAberto && (
+        <PainelNotificacoes
+          prefs={notif.prefs}
+          tipos={tipos}
+          itens={porId}
+          aviso={notif.aviso}
+          aoAlternarTipo={notif.alternarTipo}
+          aoAlternarEvento={notif.alternarEvento}
+          aoDeixarDeSeguir={notif.alternarSeguida}
+          aoLimparSeguidas={notif.limparSeguidas}
+          aoFechar={() => setPainelAberto(false)}
+        />
+      )}
+
+      {!painelAberto && notif.aviso && (
+        <div className="aviso" role="status">
+          {notif.aviso}
+        </div>
+      )}
 
       {semConexao && (
         <div className="aviso" role="status">
@@ -175,7 +242,12 @@ export function Consultas({ dados, semConexao }: { dados: Dados; semConexao: boo
             </p>
             <ul className="lista">
               {lista.slice(0, visiveis).map((c) => (
-                <LinhaConsulta key={c.id} c={c} />
+                <LinhaConsulta
+                  key={c.id}
+                  c={c}
+                  seguida={nativo ? seguidas.has(c.id) : undefined}
+                  aoSeguir={nativo ? notif.alternarSeguida : undefined}
+                />
               ))}
             </ul>
             {visiveis < lista.length && (

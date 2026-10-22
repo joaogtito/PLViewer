@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "903759491602",
+    "project_id": "plviewer",
+    "storage_bucket": "plviewer.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:903759491602:android:54693f311da94b9ea21ecb",
+        "android_client_info": {
+          "package_name": "io.github.JaoTitow.plviewer"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBPkV4VQjPpxoDW2jLSULsEMg1Pz1Xr78o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
