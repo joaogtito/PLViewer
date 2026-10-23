@@ -1,3 +1,8 @@
 graphify-out/
 CLAUDE.md
 plano-consultas-senado.md
+plano-cloudflare-worker.md
+
+worker/node_modules/
+worker/.dev.vars
+worker/.wrangler/
